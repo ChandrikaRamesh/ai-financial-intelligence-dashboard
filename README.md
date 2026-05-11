@@ -80,7 +80,7 @@ Looker Studio Dashboard
 
 ### Expense Categorization Workflow
 
-(Add workflow screenshot here)
+[(Add workflow screenshot here)](https://github.com/ChandrikaRamesh/ai-financial-intelligence-dashboard/blob/main/screenshots/expense-categorization-workflow.png)
 
 ### AI Financial Insights Workflow
 
