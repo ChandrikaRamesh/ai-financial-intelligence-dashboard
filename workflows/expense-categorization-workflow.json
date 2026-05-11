@@ -1,0 +1,314 @@
+{
+  "name": "AI Expense Analyzer",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1J_U2MEZIYrrHBmttuzx5kGBXIXVaqydg",
+          "mode": "list",
+          "cachedResultName": "/BankStatements",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1J_U2MEZIYrrHBmttuzx5kGBXIXVaqydg"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bef58351-f0a7-43cc-8b46-a5381b4caa77",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "V1g1CyUMldS5paNp",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{$json[\"id\"]}}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2a62aea6-05a1-48c0-aa65-5ee8fffc404c",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "V1g1CyUMldS5paNp",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a0005bc4-cd1c-4e76-b5d1-1f4dac5b45e9",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items\n  .filter(item => {\n\n    const row = item.json;\n\n    // Keep only rows that have a numeric debit/amount\n    return (\n      typeof row[\"__EMPTY_3\"] === \"number\"\n    );\n  })\n  .map(item => {\n\n    const row = item.json;\n\n    return {\n      json: {\n\n        date:\n          row[\"HDFC BANK Ltd. Page No .: 1 Statement of accounts\"],\n\n        description:\n          row[\"__EMPTY\"],\n\n        amount:\n          row[\"__EMPTY_3\"],\n\n        type:\n          row[\"__EMPTY_3\"] ? \"Debit\" : \"Credit\",\n\n        balance:\n          row[\"__EMPTY_5\"]\n\n      }\n    };\n  });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "b803f7ad-f159-4778-9ccb-edd6a6b5f43b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=You are a financial expense classifier.\n\nCategorize this transaction into ONE category.\n\nTransaction:\n{{$json[\"description\"]}}\n\nPossible categories:\nFood\nGroceries\nTravel\nShopping\nBills\nEntertainment\nHealthcare\nEducation\nSalary\nInvestment\nTransfer\nOther\n\nReturn ONLY the category name."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        992,
+        0
+      ],
+      "id": "6c65fa35-c171-4973-b600-ac747f468d93",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "aQPhoNhstZpl6Xvt",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "maxItems": 10
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        784,
+        -16
+      ],
+      "id": "6eb61b72-f2c5-4ea9-8012-41534c694c5f",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1MCDoi151Mm7zkZl7snLlEQqkF4AuBahHwog6FAv6Sb4",
+          "mode": "list",
+          "cachedResultName": "ExpenseAnalysis",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1MCDoi151Mm7zkZl7snLlEQqkF4AuBahHwog6FAv6Sb4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1MCDoi151Mm7zkZl7snLlEQqkF4AuBahHwog6FAv6Sb4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Category": "={{$json[\"output\"][0][\"content\"][0][\"text\"]}}",
+            "Description": "={{$node[\"Code in JavaScript\"].json[\"description\"]}}",
+            "Amount": "={{$node[\"Code in JavaScript\"].json[\"amount\"]}}",
+            "Type ": "={{$node[\"Code in JavaScript\"].json[\"type\"]}}",
+            "Balance": "={{$node[\"Code in JavaScript\"].json[\"balance\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type ",
+              "displayName": "Type ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Balance",
+              "displayName": "Balance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1376,
+        0
+      ],
+      "id": "647390ef-844e-41f4-abaf-ca50f671b088",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "I4MXS1PnMJ8elFeq",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "22dcbf2a-a0c9-4cf3-916c-33568c138799",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a2bdae0e5ceab4e3c6f446ab495227a72dbd7b9f1916a7e38b895dadcf360c7"
+  },
+  "id": "FWFiFaUfphlurbUw",
+  "tags": []
+}

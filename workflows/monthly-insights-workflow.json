@@ -1,0 +1,303 @@
+{
+  "name": "AI Monthly Financial Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "345e4ebd-5858-4774-89b3-8b0c96386f63",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1MCDoi151Mm7zkZl7snLlEQqkF4AuBahHwog6FAv6Sb4",
+          "mode": "list",
+          "cachedResultName": "ExpenseAnalysis",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1MCDoi151Mm7zkZl7snLlEQqkF4AuBahHwog6FAv6Sb4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1MCDoi151Mm7zkZl7snLlEQqkF4AuBahHwog6FAv6Sb4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "24e70f78-8cf9-4782-a243-e5a4a4bc9c3f",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "I4MXS1PnMJ8elFeq",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const summary = {};\n\nfor (const item of items) {\n\n  const category = item.json.Category;\n  const amount = Number(item.json.Amount);\n\n  if (!summary[category]) {\n    summary[category] = 0;\n  }\n\n  summary[category] += amount;\n}\n\nconst result = Object.entries(summary).map(([category, total]) => ({\n  category,\n  total\n}));\n\nreturn [{\n  json: {\n    spending_summary: result\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "34e91558-4387-4259-9356-926c4c6f6a66",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=You are an intelligent financial advisor.\n\nAnalyze the monthly spending summary.\n\nUse Indian Rupees (₹) for all amounts.\n\nReturn your response STRICTLY in this format:\n\nTop Insight:\n<one short sentence>\n\nWarning:\n<one short sentence>\n\nRecommendation:\n<one short sentence>\n\nSavings Score:\n<number between 1 and 100>\n\nMonthly Spending Summary:\n\n{{ JSON.stringify($json[\"spending_summary\"], null, 2) }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "d799a15f-2047-44fb-ae12-7f163dc3066b",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "aQPhoNhstZpl6Xvt",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1MCDoi151Mm7zkZl7snLlEQqkF4AuBahHwog6FAv6Sb4",
+          "mode": "list",
+          "cachedResultName": "ExpenseAnalysis",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1MCDoi151Mm7zkZl7snLlEQqkF4AuBahHwog6FAv6Sb4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1604732132,
+          "mode": "list",
+          "cachedResultName": "MonthlyInsights",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1MCDoi151Mm7zkZl7snLlEQqkF4AuBahHwog6FAv6Sb4/edit#gid=1604732132"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Month": "={{$json[\"month\"]}}",
+            "Top Insight": "={{$json[\"top_insight\"]}}",
+            "Warning": "={{$json[\"warning\"]}}",
+            "Recommendation": "={{$json[\"recommendation\"]}}",
+            "Savings Score": "={{$json[\"savings_score\"]}}",
+            "Savings Label": "={{$json[\"savings_label\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Month",
+              "displayName": "Month",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Top Insight",
+              "displayName": "Top Insight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Warning",
+              "displayName": "Warning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recommendation",
+              "displayName": "Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Savings Score",
+              "displayName": "Savings Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Savings Label",
+              "displayName": "Savings Label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1136,
+        -16
+      ],
+      "id": "a3fcfaae-38ef-4c1b-a852-a8e92ae415b5",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "I4MXS1PnMJ8elFeq",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const text =\n  $json.output[0].content[0].text;\n\nfunction extract(label) {\n  const regex = new RegExp(label + \":\\\\s*(.*)\");\n  const match = text.match(regex);\n  return match ? match[1].trim() : \"\";\n}\n\nconst score =\n  Number(extract(\"Savings Score\"));\n\nlet score_label = \"\";\n\nif (score >= 80) {\n  score_label = \"Excellent\";\n}\nelse if (score >= 60) {\n  score_label = \"Good\";\n}\nelse {\n  score_label = \"Needs Improvement\";\n}\n\nreturn {\n  json: {\n\n    month:\n      new Date().toLocaleString(\n        'en-US',\n        {\n          month: 'long',\n          year: 'numeric'\n        }\n      ),\n\n    top_insight:\n      extract(\"Top Insight\"),\n\n    warning:\n      extract(\"Warning\"),\n\n    recommendation:\n      extract(\"Recommendation\"),\n\n    savings_score:\n      score,\n\n    savings_label:\n      score_label\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        -16
+      ],
+      "id": "b780f32d-82d8-4a7f-bf34-287fa7807e3a",
+      "name": "Code in JavaScript1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0ff4daab-9453-4f1e-8772-9bdf1bfb7aa0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a2bdae0e5ceab4e3c6f446ab495227a72dbd7b9f1916a7e38b895dadcf360c7"
+  },
+  "id": "sD7ibv8gClAogKjg",
+  "tags": []
+}
