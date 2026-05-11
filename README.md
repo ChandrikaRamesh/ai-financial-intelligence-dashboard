@@ -84,7 +84,7 @@ Looker Studio Dashboard
 
 ### AI Financial Insights Workflow
 
-(Add workflow screenshot here)
+[(Add workflow screenshot here)](https://github.com/ChandrikaRamesh/ai-financial-intelligence-dashboard/blob/main/screenshots/monthly-insights-workflow.png)
 
 ---
 
